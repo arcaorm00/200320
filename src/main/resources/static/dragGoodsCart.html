@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" href="jquery-ui-1.12.1.custom/jquery-ui.min.css">
+<style type="text/css">
+	*{
+		margin: 0px;
+		padding: 0px;
+	}
+	body{
+		font-size: 62.5%;
+	}
+	.item{
+		margin: 3px;
+		padding: 5px;
+	}
+	.item > img{
+		width: 100px;
+		height: 100px;
+	}
+	#wrap{
+		overflow: hidden;
+	}
+	#wrap > div{
+		float: left;
+	}
+	#dock{
+		position: fixed;
+		min-height: 120px;
+		width: 100%;
+		bottom: 0px;
+		z-index: 1;
+	}
+	#dock > div{
+		float: right;
+	}
+	#addCart{
+		position: relative;
+		left: 90%;
+		top: 80%;
+	}
+</style>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script type="text/javascript" src="jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+<script type="text/javascript">
+$(function(){
+	//데이터베이스와 연동해보자.
+	var id;
+	
+	$("#loginModal").dialog({
+		modal: true,
+		buttons: [{
+			text: "입력",
+			"id": "submit",
+			click: function(){
+				var data = $("#loginModal").serialize();
+				$.ajax("isExist", {data: data, success: function(re){
+					if( re ){
+						id = $("#id").val();
+						$("#loginModal").dialog("close");
+					}else{
+						alert("정보가 올바르지 않습니다.");
+						$("#id").val("");
+						$("#pwd").val("");
+					}
+				}})
+			}
+		},{
+			text: "취소",
+			"id": "reset",
+			click: function(){
+				$("#id").val("");
+				$("#pwd").val("");
+			}
+		}]
+	})
+	
+	$.ajax("listGoods", {success: function(items){
+		$.each(items, function(idx, g){
+			var name = $("<p></p>").html(g.item);
+			var price = $("<p></p>").html(g.price+"원");
+			var img = $("<img/>").attr("src", "img/"+g.fname);
+			var item = $("<div class='ui-widget-content ui-corner-all item'></div>").attr("gno", g.no);
+			var qty = $("<input type='number' class='qty' style='width: 30px'/>").val(1);
+			$(qty).css("visibility", "hidden");
+			$(item).append(img, "<br>", name, price, qty);
+			$("#wrap").append(item);
+			
+		});
+		
+		$("#wrap > div").draggable({
+			helper: "clone",
+			zIndex: 100,
+			scroll: false
+		});
+		
+		
+		
+		$("#dock").droppable({
+			accept: "#wrap > div",
+			drop: function(event, ui){
+				$(ui.draggable).fadeOut(function(){
+					$(this).appendTo("#dock").fadeIn();
+					$(this).find(".qty").css("visibility", "visible");
+				});
+			}
+		});
+		$("body").droppable({
+			accept: "#dock > div",
+			drop: function(event, ui){
+				$(ui.draggable).fadeOut(function(){
+					$(this).appendTo("#wrap").fadeIn();
+					$(this).find(".qty").css("visibility", "hidden");
+				});
+			}
+		});
+		
+		
+	}});
+	
+	$("#addCart").click(function(){
+		$.each($("#dock .item"), function(idx, item){
+			var gno = $(this).attr("gno");
+			var qty = $(this).find(".qty").val();
+			var g = {gno: gno, qty: qty, id: id};
+			$.ajax("insertCart", {data: g, success: function(re){
+				alert(re);
+			}})
+		})
+	});
+	
+});
+</script>
+</head>
+<body>
+	<div id="wrap"></div>
+	<button id="addCart">장바구니 담기</button>
+	<div id="dock" class="ui-state-error"></div>
+	
+	<form id="loginModal" title="로그인" align="center">
+		<label for="id">아이디</label><br><br>
+		<input type="text" id="id" name="id"><br>
+		<label for="pwd">비밀번호</label><br><br>
+		<input type="password" id="pwd" name="pwd"><br>
+	</form>
+</body>
+</html>

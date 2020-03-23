@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script type="text/javascript">
+$(function(){
+	//내 메세지 등록
+	$("#write").click(function(){
+		var chat = $("#f").serialize();
+		$.ajax("insertChat", {data: chat, success: function(r){
+			
+		}});
+	});
+	
+	//대화 목록을 읽어오기
+	setInterval(function(){
+		$("#list").empty();
+		var today = new Date();
+		$.getJSON("listChat?a="+today, function(data){
+			$.each(data, function(idx, chat){
+				$("#list").append( $("<p></p>").text("["+chat.name+"] " + chat.message) );
+			});
+		});
+	}, 3000);
+});
+</script>
+</head>
+<body>
+	<h2>Chat</h2>
+	<form id="f">
+		<p>
+			<label for="name">닉네임</label>
+			<input type="text" id="name" name="name"><br>
+		</p>
+		<p>
+			<label for="message">메세지</label>
+			<textarea rows="5" cols="60" id="message" name="message"></textarea>
+		</p>
+	</form>
+	<button id="write">입력</button>
+	<hr>
+	<div id="list"></div>
+</body>
+</html>
